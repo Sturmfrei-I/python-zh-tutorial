@@ -1,0 +1,7 @@
+{
+  "languages": [
+    { "id": "python", "name": "Python", "hljs": "python", "color": "#2f6ea5", "colorOnDark": "#6db5f2" },
+    { "id": "java", "name": "Java", "hljs": "java", "color": "#b85c00", "colorOnDark": "#ffa94d" },
+    { "id": "kotlin", "name": "Kotlin", "hljs": "kotlin", "color": "#6b46e5", "colorOnDark": "#b79bff" }
+  ]
+}

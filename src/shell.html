@@ -1,0 +1,39 @@
+<header class="bar" id="bar">
+  <div class="bar-in">
+    <button class="icon-btn" id="side-toggle" type="button" aria-label="显示或隐藏目录">{{ICON_MENU}}</button>
+    <a class="brand" {{HOME_LINK}} aria-label="{{SITE_NAME}} 首页">
+      <span class="brand-mark" aria-hidden="true">Py</span>
+      <span class="brand-name">{{SITE_NAME}}</span>
+    </a>
+    <span class="bar-fill"></span>
+    <button class="search-pill" id="search-open" type="button" aria-label="搜索">
+      {{ICON_SEARCH}}
+      <span class="search-text">搜索</span>
+      <kbd>⌘K</kbd>
+    </button>
+    <label class="lang-pick" id="lang-pick-wrap">
+      <span>对比</span>
+      <select id="lang-pick" aria-label="选择对比语言">{{LANG_OPTIONS}}</select>
+    </label>
+    <button class="icon-btn" id="theme-toggle" type="button" data-mode="auto">{{THEME_ICONS}}</button>
+  </div>
+  <div class="bar-progress" aria-hidden="true"><i id="progress"></i></div>
+</header>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="shell">
+  <aside class="side" id="side" aria-label="章节目录">{{SIDE}}</aside>
+  <main class="main" id="main" tabindex="-1" {{MAIN_ATTRS}}>{{MAIN}}</main>
+</div>
+
+<dialog class="spot" id="spot" aria-label="搜索教程">
+  <div class="spot-box">
+    <label class="spot-field">
+      {{ICON_SEARCH}}
+      <input id="spot-q" type="text" autocomplete="off" spellcheck="false" placeholder="搜概念，或搜你熟悉的写法：ArrayList、when、stream">
+    </label>
+    <div class="spot-list" id="spot-list" role="listbox" aria-label="搜索结果"></div>
+    <footer class="spot-foot"><span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>↵</kbd> 打开</span><span><kbd>esc</kbd> 关闭</span></footer>
+  </div>
+</dialog>
