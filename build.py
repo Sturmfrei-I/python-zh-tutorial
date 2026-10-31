@@ -44,6 +44,7 @@ SITE_URL = os.environ.get("SITE_URL", "")
 if SITE_URL and not SITE_URL.endswith("/"):
     SITE_URL += "/"
 RESERVED_IDS = {"main", "bar", "side", "spot", "scrim", "progress", "pager"}
+RESERVED_PAGES = {"functions", "assets", "home"}  # Cloudflare Pages 部署时会忽略 functions 目录，其余已被本站占用
 HLJS = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
 
 FENCE = re.compile(r"^```(\S*)\s*(.*)$")
@@ -278,6 +279,8 @@ def parse_chapter(path: Path) -> dict:
     if not match:
         fail(where, "缺少 front matter")
     meta = dict(line.split(": ", 1) for line in match.group(1).splitlines())
+    if meta["id"] in RESERVED_PAGES:
+        fail(where, f"章节 id {meta['id']!r} 是保留名，会导致页面丢失或冲突，请换一个")
 
     intro_lines, sections = [], []
     for heading, lines in split_sections(match.group(2).splitlines()):

@@ -1,5 +1,5 @@
 ---
-id: functions
+id: functions-and-decorators
 part: 函数与数据
 title: 函数
 lede: 默认参数和关键字参数让 Python 函数比 Java 方法灵活得多，也带来一个必须知道的陷阱。
