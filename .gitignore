@@ -6,6 +6,3 @@ __pycache__/
 *.pyc
 .DS_Store
 .claude/
-
-# Wrangler 本地缓存
-.wrangler/

@@ -1,9 +1,0 @@
-// Cloudflare Workers 部署配置：把 build.py 生成的 dist/ 作为静态网站发布
-{
-  "name": "python-zh-tutorial",
-  "compatibility_date": "2026-10-30",
-  "assets": {
-    "directory": "./dist/",
-    "not_found_handling": "404-page"
-  }
-}

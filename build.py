@@ -39,6 +39,8 @@ SHEET_ID = "cheatsheet"
 SHEET_TITLE = "Python 语法速查表：Python 与 Java、Kotlin 写法对照"
 SHEET_DESCRIPTION = "汇总 Python 常用语法、内置函数、容器操作和标准库模块，并列出 Java、Kotlin 的对应写法，写代码时随手查。"
 SEO_KEYWORDS = "Python 中文教程,Python 教程,Python 入门,Python 3.12,Java 转 Python,Kotlin 转 Python"
+# Google Search Console 的所有权验证码，Google 在首页检查，验证通过后也不能删
+GOOGLE_VERIFICATION = "ZOPwlI-WvfsT5csCNK3b1XqO9NLzmYUFdc1YnqqCNFs"
 # 正式域名，比如 https://example.com/。设置后才会生成 canonical、og:url 和 sitemap.xml
 SITE_URL = os.environ.get("SITE_URL", "")
 if SITE_URL and not SITE_URL.endswith("/"):
@@ -452,6 +454,7 @@ def head_tags(page: dict, root: str, version: str) -> str:
     ]
     if page["view"] == "home":
         tags.insert(2, f'<meta name="keywords" content="{SEO_KEYWORDS}">')
+        tags.insert(3, f'<meta name="google-site-verification" content="{GOOGLE_VERIFICATION}">')
     if SITE_URL:
         url = SITE_URL + page_path(page["id"])
         tags += [f'<link rel="canonical" href="{url}">', f'<meta property="og:url" content="{url}">']
