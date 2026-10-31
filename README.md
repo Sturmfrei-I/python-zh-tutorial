@@ -29,13 +29,19 @@ tools/verify.py   运行全部示例，核对 `=>` 注释里的结果
 
 ## 部署
 
-`dist/` 是纯静态文件，任何静态托管都可以用。以 Cloudflare Pages 为例：
+网站部署在 Cloudflare Workers 上，配置在 `wrangler.jsonc`。在 Cloudflare 控制台的 Workers & Pages 里导入 GitHub 仓库时这样填：
 
-- 构建命令：`python3 build.py`
-- 输出目录：`dist`
-- 环境变量：`SITE_URL=https://你的域名/`
+| 配置项 | 内容 |
+| --- | --- |
+| 项目名称 | `python-zh-tutorial`，要和 `wrangler.jsonc` 里的 `name` 一致 |
+| 构建命令 | `python3 build.py` |
+| 部署命令 | `npx wrangler deploy` |
+| 路径 | `/` |
+| 构建变量 | `SITE_URL` = `https://你的域名/` |
 
-一定要设置 `SITE_URL`，否则不会生成 canonical、og:url 和 `sitemap.xml`。上线后在 Google Search Console、Bing Webmaster 和百度搜索资源平台提交 `sitemap.xml`。
+一定要设置 `SITE_URL`，否则不会生成 canonical、og:url 和 `sitemap.xml`。之后每次推送到 `main` 都会自动重新部署。
+
+上线后在 Google Search Console 提交 `sitemap.xml`。
 
 ## 添加一门对比语言
 
