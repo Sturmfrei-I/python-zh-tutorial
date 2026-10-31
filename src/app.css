@@ -712,7 +712,7 @@ strong { font-weight: 600; }
 
 .same-tag { display: inline-flex; align-items: center; gap: 3px; margin-right: var(--sp-2); color: var(--dk-res); font-size: 13px; font-weight: 600; }
 
-.vs-note { margin: 0; padding: var(--sp-3) 20px 0; color: var(--stage-fg-2); font-size: 14px; line-height: 1.65; }
+.vs-note { margin: 0; padding: var(--sp-3) 20px; color: var(--stage-fg-2); font-size: 14px; line-height: 1.65; }
 
 .vs-take {
   display: flex;

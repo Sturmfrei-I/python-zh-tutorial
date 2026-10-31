@@ -25,6 +25,10 @@ Python 的语法很快就能上手。真正需要适应的是下面三点。
 | `python3` 交互模式 | `jshell` | Kotlin Notebook | 验证想法最快的方式 |
 :::
 
+:::tip 示例用的版本
+示例基于 Python 3.12、Java 21 和 Kotlin 2。如果你主要用 Java 8，可能会看到一些没见过的写法：`List.of`（Java 9）、`var`（Java 10）、文本块（Java 15）、`record` 和 `Stream.toList()`（Java 16）。
+:::
+
 ## Hello World {#hello}
 
 把下面一行存为 `hello.py`，再执行 `python3 hello.py` 就能看到输出。
