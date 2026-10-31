@@ -4,7 +4,7 @@ part: 对象、异常与文件
 title: 错误与异常
 lede: 结构和 try/catch 一样，多了一个 else 分支。Python 没有受检异常，鼓励先做再处理错误。
 source: 错误和异常 | errors.html
-seo_title: Python 异常处理：try、except、raise 和 with，对比 Java try-catch
+seo_title: Python 异常处理：try、except 和 with，对比 Java
 seo_description: 讲解 Python 的 try except else finally、异常链、自定义异常和 with 语句，并对比 Java 的受检异常和 try-with-resources。
 ---
 

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """运行 content/ 里的全部示例，确认代码能跑、`=>` 注释写的结果和真实输出一致。
 
-    python3 tools/verify.py                 # 校验全部语言
-    python3 tools/verify.py python kotlin   # 只校验指定语言
+    .venv/bin/python tools/verify.py                 # 校验全部语言
+    .venv/bin/python tools/verify.py python kotlin   # 只校验指定语言
+
+Python 示例由运行本脚本的解释器执行。.venv 里装了 tools/requirements.txt，
+FastAPI、SQLModel 等第三方库的示例才能运行。
 
 校验规则：
     - `# => 值` / `// => 值` 必须按顺序出现在程序输出里
@@ -16,6 +19,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import re
 import shutil
 import subprocess
@@ -51,8 +55,10 @@ def run_python(src: str, workdir: Path) -> tuple[int, str]:
     ast.fix_missing_locations(tree)
     script = workdir / "snippet.py"
     script.write_text(ast.unparse(tree), "utf-8")
+    # 示例的隐藏行能 import 同目录的 fakellm，不需要 API Key 就能跑大模型代码
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parent)}
     done = subprocess.run([sys.executable, "snippet.py"], cwd=workdir, capture_output=True,
-                          text=True, timeout=TIMEOUT)
+                          text=True, timeout=TIMEOUT, env=env)
     return done.returncode, done.stdout if done.returncode == 0 else done.stdout + done.stderr
 
 

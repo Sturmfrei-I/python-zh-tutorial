@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""把 content/*.md 和 src/ 生成静态网站，只依赖标准库。
+"""把 content/<大类>/*.md 和 src/ 生成静态网站，只依赖标准库。
 
     python3 build.py
     SITE_URL=https://example.com/ python3 build.py   # 上线时指定正式域名
@@ -18,6 +18,7 @@ import os
 import re
 import shutil
 import sys
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -29,16 +30,26 @@ SRC = ROOT / "src"
 DIST = ROOT / "dist"
 PREVIEW = ROOT / "preview"
 
-SITE_NAME = "Python 中文教程"
-SEO_TITLE = "Python 中文教程：写给程序员的 Python 入门教程"
+SITE_NAME = "Python 与 AI 开发教程"
+SEO_TITLE = "Python 中文教程：AI 开发、Agent 开发和大模型开发入门"
+SEO_ALTERNATE_NAME = "Python 中文教程"
+SITE_LEDE = (
+    "写给有编程经验的开发者的 AI Agent 应用开发教程。从 Python 语言学起，"
+    "一步步掌握服务端、大模型和 Agent 开发，重要概念都和你熟悉的语言对比。"
+)
 SEO_DESCRIPTION = (
-    "写给有编程经验的开发者的 Python 3.12 中文教程。基于官方文档精简为 {chapters} 章，"
-    "每个知识点都和 Java、Kotlin 对比，帮助你快速入门 Python。"
+    "写给有编程经验的开发者的 AI 开发教程。从 Python 入门学起，一步步掌握 FastAPI 后端、"
+    "大模型开发、AI Agent 智能体开发、RAG 和 MCP，重要概念都和 Java、Kotlin 对比。"
 )
 SHEET_ID = "cheatsheet"
-SHEET_TITLE = "Python 语法速查表：Python 与 Java、Kotlin 写法对照"
+SHEET_TITLE = "Python 语法速查表：和 Java、Kotlin 写法对照"
 SHEET_DESCRIPTION = "汇总 Python 常用语法、内置函数、容器操作和标准库模块，并列出 Java、Kotlin 的对应写法，写代码时随手查。"
-SEO_KEYWORDS = "Python 中文教程,Python 教程,Python 入门,Python 3.12,Java 转 Python,Kotlin 转 Python"
+SEO_KEYWORDS = (
+    "Python 中文教程,Python 教程,Python 入门,AI 开发,AI 开发教程,AI 应用开发,Agent 开发,AI Agent 开发,智能体开发,"
+    "大模型开发,大模型应用开发,LLM 应用开发,RAG 教程,MCP 教程,LangGraph 教程,FastAPI 教程,Java 转 AI,Java 转 Python,Kotlin 转 Python"
+)
+# 搜索结果里的标题大约显示 30 个汉字，超过这个宽度时构建会提示
+TITLE_WIDTH = 60
 # Google Search Console 的所有权验证码，Google 在首页检查，验证通过后也不能删
 GOOGLE_VERIFICATION = "ZOPwlI-WvfsT5csCNK3b1XqO9NLzmYUFdc1YnqqCNFs"
 # 正式域名，比如 https://example.com/。设置后才会生成 canonical、og:url 和 sitemap.xml
@@ -46,8 +57,9 @@ SITE_URL = os.environ.get("SITE_URL", "")
 if SITE_URL and not SITE_URL.endswith("/"):
     SITE_URL += "/"
 RESERVED_IDS = {"main", "bar", "side", "spot", "scrim", "progress", "pager"}
-RESERVED_PAGES = {"functions", "assets", "home"}  # Cloudflare Pages 部署时会忽略 functions 目录，其余已被本站占用
+RESERVED_PAGES = {"functions", "assets", "home", SHEET_ID}  # Cloudflare Pages 部署时会忽略 functions 目录，其余已被本站占用
 HLJS = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+PYTHON_TUTORIAL = "https://docs.python.org/zh-cn/3.12/tutorial/"
 
 FENCE = re.compile(r"^```(\S*)\s*(.*)$")
 CONTAINER = re.compile(r"^:::(\w+)\s*(.*?)\s*(?:\{#([\w-]+)\})?\s*$")
@@ -63,9 +75,15 @@ def load_languages() -> list[dict]:
     return json.loads((ROOT / "languages.json").read_text("utf-8"))["languages"]
 
 
+def load_categories() -> list[dict]:
+    return json.loads((ROOT / "categories.json").read_text("utf-8"))["categories"]
+
+
 LANGUAGES = load_languages()
 LANGUAGE_IDS = [lang["id"] for lang in LANGUAGES]
 BASE = LANGUAGE_IDS[0]
+CATEGORIES = load_categories()
+RESERVED_PAGES.update(category["id"] for category in CATEGORIES)  # 大类页面用的网址
 
 
 # ---------- 行内语法：`code`、**粗体**、[链接](url) ----------
@@ -274,6 +292,12 @@ def walk(blocks: list[dict]):
             yield from walk(block["blocks"])
 
 
+def source_url(target: str) -> str:
+    """完整网址原样使用，其余按 Python 官方教程里的页面名处理。"""
+    target = target.strip()
+    return target if target.startswith("https://") else PYTHON_TUTORIAL + target
+
+
 def parse_chapter(path: Path) -> dict:
     where = path.name
     text = path.read_text("utf-8")
@@ -305,9 +329,10 @@ def parse_chapter(path: Path) -> dict:
         "seo_description": meta["seo_description"],
         "updated": datetime.date.fromtimestamp(path.stat().st_mtime).isoformat(),
         "sources": [
-            {"title": name.strip(), "url": "https://docs.python.org/zh-cn/3.12/tutorial/" + page.strip()}
-            for name, page in (item.split("|") for item in meta["source"].split(";"))
+            {"title": name.strip(), "url": source_url(target)}
+            for name, target in (item.split("|") for item in meta["source"].split(";"))
         ],
+        "versions": meta.get("versions", ""),
         "intro": parse_blocks(intro_lines, where),
         "sections": sections,
         "recap": [],
@@ -342,9 +367,31 @@ def parse_chapter(path: Path) -> dict:
 
 
 def load_course() -> dict:
-    chapters = [parse_chapter(p) for p in sorted(CONTENT.glob("*.md"))]
-    parts = list(dict.fromkeys(ch["part"] for ch in chapters))
-    return {"title": SITE_NAME, "languages": LANGUAGES, "parts": parts, "chapters": chapters}
+    known = {category["id"] for category in CATEGORIES}
+    stray = [p.name for p in CONTENT.iterdir() if p.suffix == ".md" or (p.is_dir() and p.name not in known)]
+    if stray:
+        fail("content", f"这些内容不在 categories.json 注册的大类目录里：{', '.join(sorted(stray))}")
+
+    categories = []
+    for category in CATEGORIES:
+        chapters = [parse_chapter(p) for p in sorted((CONTENT / category["id"]).glob("*.md"))]
+        if not chapters:  # 还没写内容的大类不显示
+            continue
+        for number, chapter in enumerate(chapters, 1):
+            chapter["no"] = number
+            chapter["category"] = category["id"]
+            for block in walk(chapter["intro"] + [b for s in chapter["sections"] for b in s["blocks"]]):
+                if block["type"] == "compare":
+                    block["stacked"] = category.get("stacked", False)
+        parts = list(dict.fromkeys(ch["part"] for ch in chapters))
+        categories.append({**category, "parts": parts, "chapters": chapters})
+
+    chapters = [chapter for category in categories for chapter in category["chapters"]]
+    ids = [chapter["id"] for chapter in chapters]
+    repeated = sorted({page for page in ids if ids.count(page) > 1})
+    if repeated:
+        fail("content", f"章节 id 重复，所有大类共用一层网址：{', '.join(repeated)}")
+    return {"title": SITE_NAME, "languages": LANGUAGES, "categories": categories, "chapters": chapters}
 
 
 def coverage(chapters: list[dict]) -> dict[str, tuple[int, int]]:
@@ -380,35 +427,61 @@ def page_path(page_id: str) -> str:
 
 def page_list(course: dict) -> list[dict]:
     chapters = course["chapters"]
+    category_names = {category["id"]: category["name"] for category in course["categories"]}
+    sheet_category = next(category for category in course["categories"] if category.get("cheatsheet"))
     pages = [{
         "id": "home",
         "view": "home",
         "title": SEO_TITLE,
         "name": SITE_NAME,
-        "description": SEO_DESCRIPTION.format(chapters=len(chapters)),
+        "description": SEO_DESCRIPTION,
         "updated": max(ch["updated"] for ch in chapters),
         "schema": {
             "@context": "https://schema.org",
             "@type": "Course",
             "name": SITE_NAME,
-            "description": SEO_DESCRIPTION.format(chapters=len(chapters)),
+            "description": SEO_DESCRIPTION,
             "inLanguage": "zh-CN",
-            "teaches": "Python",
+            "teaches": ["Python", "AI 开发", "大模型开发", "AI Agent 开发"],
             "syllabusSections": [
                 {"@type": "Syllabus", "name": ch["title"], "description": ch["seo_description"]}
                 for ch in chapters
             ],
         },
     }]
+    for category in course["categories"]:
+        pages.append({
+            "id": category["id"],
+            "view": "category",
+            "category": category,
+            "title": category["seo_title"],
+            "name": f'{category["name"]} | {SITE_NAME}',
+            "description": category["seo_description"],
+            "updated": max(ch["updated"] for ch in category["chapters"]),
+            "trail": [(SITE_NAME, "home"), (category["name"], category["id"])],
+            "schema": {
+                "@context": "https://schema.org",
+                "@type": "CollectionPage",
+                "name": category["seo_title"],
+                "description": category["seo_description"],
+                "inLanguage": "zh-CN",
+                "isPartOf": {"@type": "Course", "name": SITE_NAME},
+            },
+        })
     for chapter in chapters:
         pages.append({
             "id": chapter["id"],
             "view": "chapter",
             "chapter": chapter,
-            "title": f'{chapter["seo_title"]} | {SITE_NAME}',
+            "title": chapter["seo_title"],
             "name": f'{chapter["title"]} | {SITE_NAME}',
             "description": chapter["seo_description"],
             "updated": chapter["updated"],
+            "trail": [
+                (SITE_NAME, "home"),
+                (category_names[chapter["category"]], chapter["category"]),
+                (chapter["title"], chapter["id"]),
+            ],
             "schema": {
                 "@context": "https://schema.org",
                 "@type": "TechArticle",
@@ -422,10 +495,11 @@ def page_list(course: dict) -> list[dict]:
     pages.append({
         "id": SHEET_ID,
         "view": "sheet",
-        "title": f"{SHEET_TITLE} | {SITE_NAME}",
+        "title": SHEET_TITLE,
         "name": f"速查表 | {SITE_NAME}",
         "description": SHEET_DESCRIPTION,
         "updated": max(ch["updated"] for ch in chapters),
+        "trail": [(SITE_NAME, "home"), (sheet_category["name"], sheet_category["id"]), ("速查表", SHEET_ID)],
         "schema": {
             "@context": "https://schema.org",
             "@type": "TechArticle",
@@ -438,6 +512,33 @@ def page_list(course: dict) -> list[dict]:
     return pages
 
 
+def website_schema() -> dict:
+    """首页的站点信息。章节标题不再带站名，Google 用它在搜索结果里显示站名。"""
+    return {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": SITE_NAME,
+        "alternateName": SEO_ALTERNATE_NAME,
+        "url": SITE_URL,
+        "inLanguage": "zh-CN",
+    }
+
+
+def breadcrumb_schema(trail: list[tuple[str, str]]) -> dict:
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": position, "name": name, "item": SITE_URL + page_path(page_id)}
+            for position, (name, page_id) in enumerate(trail, start=1)
+        ],
+    }
+
+
+def display_width(text: str) -> int:
+    return sum(2 if unicodedata.east_asian_width(char) in "WF" else 1 for char in text)
+
+
 def head_tags(page: dict, root: str, version: str) -> str:
     title = html.escape(page["title"], quote=True)
     description = html.escape(page["description"], quote=True)
@@ -447,7 +548,7 @@ def head_tags(page: dict, root: str, version: str) -> str:
         f'<meta property="og:title" content="{title}">',
         f'<meta property="og:description" content="{description}">',
         f'<meta property="og:site_name" content="{SITE_NAME}">',
-        f'<meta property="og:type" content="{"website" if page["view"] == "home" else "article"}">',
+        f'<meta property="og:type" content="{"article" if page["view"] in ("chapter", "sheet") else "website"}">',
         '<meta property="og:locale" content="zh_CN">',
         f'<link rel="icon" href="{root}assets/favicon.svg" type="image/svg+xml">',
         f'<link rel="stylesheet" href="{root}assets/app.css?v={version}">',
@@ -463,6 +564,10 @@ def head_tags(page: dict, root: str, version: str) -> str:
         if SITE_URL:
             schema["url"] = SITE_URL + page_path(page["id"])
         tags.append(f'<script type="application/ld+json">{json_ld(schema)}</script>')
+    if SITE_URL and page["view"] == "home":
+        tags.append(f'<script type="application/ld+json">{json_ld(website_schema())}</script>')
+    if SITE_URL and page.get("trail"):
+        tags.append(f'<script type="application/ld+json">{json_ld(breadcrumb_schema(page["trail"]))}</script>')
     return "\n".join(tags)
 
 
@@ -505,7 +610,7 @@ def write_site_files(pages: list[dict], course: dict) -> None:
     (DIST / "robots.txt").write_text(robots, "utf-8")
 
     entries = "\n".join(
-        f"- [{p['title'].removesuffix(f' | {SITE_NAME}')}]({SITE_URL}{page_path(p['id'])}): {p['description']}"
+        f"- [{p['title']}]({SITE_URL}{page_path(p['id'])}): {p['description']}"
         for p in pages if p["view"] != "home"
     )
     (DIST / "llms.txt").write_text(
@@ -515,8 +620,11 @@ def write_site_files(pages: list[dict], course: dict) -> None:
 
 def main() -> None:
     course = load_course()
-    site = Renderer(course, SITE_NAME, SHEET_ID)
+    site = Renderer(course, SITE_NAME, SITE_LEDE, SHEET_ID)
     pages = page_list(course)
+    for page in pages:
+        if display_width(page["title"]) > TITLE_WIDTH:
+            print(f"标题偏长：{page['title']}")
 
     css = (SRC / "app.css").read_text("utf-8") + "\n" + language_css() + "\n"
     js = (SRC / "app.js").read_text("utf-8")
@@ -540,7 +648,7 @@ def main() -> None:
 
     base_path = urlparse(SITE_URL).path or "/"
     missing = {"id": "home", "view": "home", "title": f"页面不存在 | {SITE_NAME}",
-               "description": SEO_DESCRIPTION.format(chapters=len(course["chapters"]))}
+               "description": SEO_DESCRIPTION}
     (DIST / "404.html").write_text(
         static_page(missing, site.shell(shell, missing, base_path, site.not_found_html(base_path),
                                         f"assets/search.json?v={version}"),

@@ -68,19 +68,28 @@ def chapter_blocks(chapter: dict):
         yield from walk(section["blocks"])
 
 
+def reading_time(category: dict) -> str:
+    minutes = sum(chapter["minutes"] for chapter in category["chapters"])
+    return f"约 {minutes} 分钟" if minutes < 60 else f"约 {round(minutes / 60, 1)} 小时"
+
+
 class Renderer:
-    def __init__(self, course: dict, site_name: str, sheet_id: str):
+    def __init__(self, course: dict, site_name: str, site_lede: str, sheet_id: str):
         self.course = course
         self.site_name = site_name
+        self.site_lede = site_lede
         self.sheet_id = sheet_id
         self.chapters = course["chapters"]
-        self.parts = course["parts"]
+        self.categories = course["categories"]
+        self.category_by_id = {category["id"]: category for category in self.categories}
+        # 正文里写「章节名」或「大类名」时，自动链接到对应页面
+        self.references = {chapter["title"]: chapter["id"] for chapter in self.chapters}
+        self.references.update({category["name"]: category["id"] for category in self.categories})
+        self.sheet_category = next(category for category in self.categories if category.get("cheatsheet"))
         self.languages = course["languages"]
         self.base = self.languages[0]["id"]
         self.others = [lang["id"] for lang in self.languages[1:]]
         self.by_id = {lang["id"]: lang for lang in self.languages}
-        for number, chapter in enumerate(self.chapters, 1):
-            chapter["no"] = number
 
     @staticmethod
     def link(root: str, page: str, frag: str = "") -> str:
@@ -89,6 +98,29 @@ class Renderer:
         if frag:
             href += f"#{frag}"
         return f'href="{href}" data-page="{page}"' + (f' data-frag="{frag}"' if frag else "")
+
+    def link_references(self, content: str, chapter: dict, root: str) -> str:
+        """把正文里的「章节名」和「第 N 章」换成站内链接，代码块不处理。"""
+        siblings = self.category_by_id[chapter["category"]]["chapters"]
+
+        def by_name(match: re.Match) -> str:
+            page = self.references.get(match[1])
+            if page in (None, chapter["id"]):
+                return match[0]
+            return f'「<a {self.link(root, page)}>{match[1]}</a>」'
+
+        def by_number(match: re.Match) -> str:
+            number = int(match[1])
+            if number == chapter["no"] or not 0 < number <= len(siblings):
+                return match[0]
+            return f'<a {self.link(root, siblings[number - 1]["id"])}>{match[0]}</a>'
+
+        parts = re.split(r"(<pre\b.*?</pre>)", content, flags=re.S)
+        return "".join(
+            part if part.startswith("<pre")
+            else re.sub(r"第 (\d+) 章", by_number, re.sub(r"「([^「」<>]+)」", by_name, part))
+            for part in parts
+        )
 
     # ---------- 内容块 ----------
 
@@ -171,7 +203,7 @@ class Renderer:
         picker = self.lang_picker(ids) if len(ids) > MAX_TABS else self.seg_tabs(ids)
         intro = "".join(f'<p class="vs-intro">{text}</p>' for text in block["intro"])
         return (
-            f'<section class="vs" id="{block["id"]}" data-langs="{",".join(ids)}">'
+            f'<section class="vs{" is-stacked" if block.get("stacked") else ""}" id="{block["id"]}" data-langs="{",".join(ids)}">'
             f'<h3 class="vs-title">{block["title"]}</h3>{intro}<div class="vs-code">'
             f'<div class="vs-pane"><div class="vs-bar"><span class="vs-lang" data-lang="{self.base}">'
             f'{esc(self.by_id[self.base]["name"])}</span>{self.copy_button()}</div>'
@@ -255,25 +287,67 @@ class Renderer:
                 f'<div class="side-secs"><ol>{sections}</ol></div></li>'
             )
 
-        groups = "".join(
-            f'<section class="side-part"><h2>{esc(part)}</h2><ol>'
-            + "".join(chapter_item(c) for c in self.chapters if c["part"] == part)
-            + "</ol></section>"
-            for part in self.parts
-        )
         sheet = (
             '<section class="side-part"><h2>工具</h2><ol>'
             f'<li class="side-ch{" is-active" if active == self.sheet_id else ""}" data-ch="{self.sheet_id}">'
             f'<a class="side-link" {self.link(root, self.sheet_id)}><span class="n">{icon("table")}</span>'
             '<span class="t">速查表</span></a></li></ol></section>'
         )
-        return groups + sheet
+
+        def category_items(category: dict) -> str:
+            groups = "".join(
+                f'<section class="side-part"><h2>{esc(part)}</h2><ol>'
+                + "".join(chapter_item(c) for c in category["chapters"] if c["part"] == part)
+                + "</ol></section>"
+                for part in category["parts"]
+            )
+            return groups + (sheet if category is self.sheet_category else "")
+
+        # 所有大类都写进页面，只显示当前这一类。单文件预览版切换页面时不会重新生成目录
+        current = active if active in self.category_by_id else next(
+            (c["category"] for c in self.chapters if c["id"] == active), self.sheet_category["id"]
+        )
+        picker = ""
+        if len(self.categories) > 1:
+            options = "".join(
+                f'<option value="{c["id"]}"{" selected" if c["id"] == current else ""}>{esc(c["name"])}</option>'
+                for c in self.categories
+            )
+            picker = f'<label class="side-pick"><select id="side-cat" aria-label="选择大类" autocomplete="off">{options}</select></label>'
+        return picker + "".join(
+            f'<div class="side-cat" data-cat="{c["id"]}"{"" if c["id"] == current else " hidden"}>{category_items(c)}</div>'
+            for c in self.categories
+        )
 
     def home_main(self, root: str) -> str:
         chapters = self.chapters
-        total = sum(c["compares"] for c in chapters)
-        hours = round(sum(c["minutes"] for c in chapters) / 60, 1)
         hero = next((b for c in chapters for b in chapter_blocks(c) if b.get("anchor") == "hero"), None)
+
+        def category_card(category: dict) -> str:
+            return (
+                f'<li><a class="cat-card" {self.link(root, category["id"])}><b>{esc(category["name"])}</b>'
+                f'<span class="cat-sum">{esc(category["summary"])}</span>'
+                f'<span class="cat-foot">{len(category["chapters"])} 章 · {reading_time(category)}{icon("chevron")}</span></a></li>'
+            )
+
+        return (
+            '<div class="home"><section class="hero">'
+            f"<h1>{esc(self.site_name)}</h1>"
+            f'<p class="lede">{esc(self.site_lede)}</p>'
+            # 只有读过的人才需要这个按钮，由 app.js 显示
+            f'<div class="cta" hidden><a class="btn primary" id="cta-start" {self.link(root, chapters[0]["id"])}>开始学习</a></div>'
+            "</section>"
+            f'<ul class="cat-grid">{"".join(category_card(c) for c in self.categories)}</ul>'
+            f'{self.compare_card(hero, compact=True) if hero else ""}'
+            '<footer class="foot">Python 语言部分改写自 <a href="https://docs.python.org/zh-cn/3.12/tutorial/index.html" '
+            'target="_blank" rel="noopener">Python 3.12 官方教程</a>，示例基于 Python 3.12、Java 21 和 Kotlin 2。'
+            "“Python”是 Python 软件基金会（PSF）的注册商标，本站与 PSF 无关。</footer></div>"
+        )
+
+    def category_main(self, category: dict, root: str) -> str:
+        chapters = category["chapters"]
+        compares = sum(c["compares"] for c in chapters)
+        stats = [f"{len(chapters)} 章"] + ([f"{compares} 组对比"] if compares else []) + [reading_time(category)]
 
         def toc_item(chapter: dict) -> str:
             return (
@@ -287,28 +361,24 @@ class Renderer:
             f'<section class="part"><h2>{esc(part)}</h2><ol class="toc">'
             + "".join(toc_item(c) for c in chapters if c["part"] == part)
             + "</ol></section>"
-            for part in self.parts
+            for part in category["parts"]
         )
+        sheet = f'<a class="btn quiet" {self.link(root, self.sheet_id)}>速查表</a>' if category is self.sheet_category else ""
         return (
-            '<div class="home"><section class="hero">'
-            f"<h1>{esc(self.site_name)}</h1>"
-            f'<p class="lede">写给有编程经验的开发者的 Python 教程。基于官方文档精简为&nbsp;{len(chapters)}&nbsp;章，'
-            "每个知识点都和你熟悉的语言对比，让你更快学会 Python。</p>"
-            f'<div class="cta"><a class="btn primary" id="cta-start" {self.link(root, chapters[0]["id"])}>开始学习</a>'
-            f'<a class="btn quiet" {self.link(root, self.sheet_id)}>速查表</a></div>'
-            f'<p class="hero-meta">{len(chapters)} 章 · {total} 组对比 · 约 {hours} 小时</p></section>'
-            f'{self.compare_card(hero, compact=True) if hero else ""}'
-            f'<div class="parts">{parts}</div>'
-            '<footer class="foot">内容改写自 <a href="https://docs.python.org/zh-cn/3.12/tutorial/index.html" '
-            'target="_blank" rel="noopener">Python 3.12 官方教程</a>，示例基于 Python 3.12、Java 21 和 Kotlin 2。'
-            "“Python”是 Python 软件基金会（PSF）的注册商标，本站与 PSF 无关。</footer></div>"
+            f'<div class="home"><a class="back" {self.link(root, "home")}>{icon("chevron")}全部分类</a>'
+            f'<section class="hero cat-hero"><h1>{esc(category["name"])}</h1><p class="lede">{esc(category["summary"])}</p>'
+            f'<div class="cta"><a class="btn primary" id="cta-start" data-cat="{category["id"]}" '
+            f'{self.link(root, chapters[0]["id"])}>开始学习</a>{sheet}</div>'
+            f'<p class="hero-meta">{" · ".join(stats)}</p></section>'
+            f'<div class="parts">{parts}</div></div>'
         )
 
     def chapter_main(self, chapter: dict, root: str) -> str:
+        category = self.category_by_id[chapter["category"]]
         index = chapter["no"] - 1
-        prev_ch = self.chapters[index - 1] if index else None
-        next_ch = self.chapters[index + 1] if index + 1 < len(self.chapters) else None
-        intro = f'<div class="flow intro">{self.render_blocks(chapter["intro"])}</div>' if chapter["intro"] else ""
+        prev_ch = category["chapters"][index - 1] if index else None
+        next_ch = category["chapters"][index + 1] if index + 1 < len(category["chapters"]) else None
+        intro =f'<div class="flow intro">{self.render_blocks(chapter["intro"])}</div>' if chapter["intro"] else ""
         sections = "".join(
             f'<section class="sec" id="{s["id"]}"><h2>{s["title"]}</h2>'
             f'<div class="flow">{self.render_blocks(s["blocks"])}</div></section>'
@@ -326,23 +396,28 @@ class Renderer:
             f'<a class="prev" {self.link(root, prev_ch["id"])}><span>上一章</span><b>{esc(prev_ch["title"])}</b></a>'
             if prev_ch else ""
         )
-        following = (
-            f'<a class="next" {self.link(root, next_ch["id"])}><span>下一章</span><b>{esc(next_ch["title"])}</b></a>'
-            if next_ch else f'<a class="next" {self.link(root, self.sheet_id)}><span>学完了</span><b>速查表</b></a>'
-        )
+        if next_ch:
+            following = f'<a class="next" {self.link(root, next_ch["id"])}><span>下一章</span><b>{esc(next_ch["title"])}</b></a>'
+        elif category is self.sheet_category:
+            following = f'<a class="next" {self.link(root, self.sheet_id)}><span>学完了</span><b>速查表</b></a>'
+        else:
+            following = f'<a class="next" {self.link(root, category["id"])}><span>学完了</span><b>{esc(category["name"])}目录</b></a>'
+        compares = f'<li>{icon("swap")}{chapter["compares"]} 组对比</li>' if chapter["compares"] else ""
+        content = self.link_references(f"{intro}{sections}", chapter, root)
+        versions = f'<li>基于 {esc(chapter["versions"])}</li>' if chapter["versions"] else ""
         return (
             f'<article class="doc"><header class="doc-head"><h1>{esc(chapter["title"])}</h1>'
             f'<p class="lede">{chapter["lede"]}</p><ul class="meta">'
-            f'<li>第 {chapter["no"]} 章 · {esc(chapter["part"])}</li>'
+            f'<li><span><a {self.link(root, category["id"])}>{esc(category["name"])}</a> · 第 {chapter["no"]} 章</span></li>'
             f'<li>{icon("clock")}{chapter["minutes"]} 分钟</li>'
-            f'<li>{icon("swap")}{chapter["compares"]} 组对比</li></ul></header>'
-            f'{intro}{sections}<div class="doc-tail">{recap}<p class="sources">官方原文：{sources}</p>'
+            f'{compares}{versions}</ul></header>'
+            f'{content}<div class="doc-tail">{recap}<p class="sources">参考资料：{sources}</p>'
             f'<nav class="pager" id="pager" aria-label="翻页">{previous}{following}</nav></div></article>'
         )
 
     def sheet_main(self, root: str) -> str:
         groups = ""
-        for chapter in self.chapters:
+        for chapter in self.sheet_category["chapters"]:
             maps = [b for b in chapter_blocks(chapter) if b["type"] == "map"]
             if maps:
                 groups += (
@@ -367,6 +442,8 @@ class Renderer:
     def main_html(self, page: dict, root: str) -> str:
         if page["view"] == "home":
             return self.home_main(root)
+        if page["view"] == "category":
+            return self.category_main(page["category"], root)
         if page["view"] == "sheet":
             return self.sheet_main(root)
         return self.chapter_main(page["chapter"], root)
@@ -399,8 +476,12 @@ class Renderer:
             index.append({"kind": kind, "title": title, "sub": sub, "page": page,
                           "frag": frag, "text": text, "rank": rank})
 
+        for category in self.categories:
+            add("大类", category["name"], category["summary"], category["id"], "", "", 3)
+
         for chapter in self.chapters:
-            add("章节", f'{chapter["no"]}. {chapter["title"]}', plain(chapter["lede"]), chapter["id"], "", "", 3)
+            category = self.category_by_id[chapter["category"]]["name"]
+            add("章节", f'{chapter["no"]}. {chapter["title"]}', f'{category} · {plain(chapter["lede"])}', chapter["id"], "", "", 3)
             for section in chapter["sections"]:
                 section_title = plain(section["title"])
                 add("小节", section_title, chapter["title"], chapter["id"], section["id"], "", 2)

@@ -2,6 +2,11 @@
 dist/
 preview/
 
+.venv/
+tools/jvm/.gradle/
+tools/jvm/.gradle-home/
+tools/jvm/build/
+tools/jvm/classpath.txt
 __pycache__/
 *.pyc
 .DS_Store

@@ -4,7 +4,7 @@ part: 函数与数据
 title: 函数
 lede: 默认参数和关键字参数让 Python 函数比 Java 方法灵活得多，也带来一个必须知道的陷阱。
 source: 定义函数 | controlflow.html ; 作用域和命名空间 | classes.html
-seo_title: Python 函数教程：默认参数、*args、lambda、装饰器，对比 Java 和 Kotlin
+seo_title: Python 函数教程：*args、lambda 和装饰器，对比 Java
 seo_description: 讲解 Python 函数的默认参数陷阱、关键字参数、*args 和 **kwargs、闭包、装饰器和类型注解，并说明 Python 装饰器和 Java 注解的区别。
 ---
 

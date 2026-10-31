@@ -118,6 +118,14 @@
   let sectionSpy;
   let endSpy;
 
+  function showCategory(id) {
+    document.querySelectorAll('.side-cat').forEach((group) => {
+      group.hidden = group.dataset.cat !== id;
+    });
+    const picker = $('side-cat');
+    if (picker) picker.value = id;
+  }
+
   function markProgress() {
     document.querySelectorAll('.side-ch').forEach((item) => {
       item.classList.toggle('is-done', state.done.has(item.dataset.ch));
@@ -134,12 +142,15 @@
     const cta = $('cta-start');
     if (!cta || !state.last) return;
     const [page, frag] = state.last.split('#');
-    const title = document.querySelector(`.side-ch[data-ch="${page}"] .t`)?.textContent;
+    // 大类页面上的按钮只接着读这一类的章节，首页的按钮不限大类
+    const scope = cta.dataset.cat ? `.side-cat[data-cat="${cta.dataset.cat}"] ` : '';
+    const title = document.querySelector(`${scope}.side-ch[data-ch="${page}"] .t`)?.textContent;
     if (!title) return;
     cta.textContent = `继续：${title}`;
     cta.href = pageUrl(page, frag);
     cta.dataset.page = page;
     if (frag) cta.dataset.frag = frag;
+    cta.parentElement.hidden = false;
   }
 
   function watchChapter() {
@@ -205,6 +216,9 @@
       item.classList.toggle('is-active', item.dataset.ch === page);
     });
     document.querySelectorAll('.side-secs a.is-on').forEach((a) => a.classList.remove('is-on'));
+    const group = document.querySelector(`.side-cat[data-cat="${page}"]`)
+      ?? document.querySelector(`.side-ch[data-ch="${page}"]`)?.closest('.side-cat');
+    if (group) showCategory(group.dataset.cat);
     afterRender();
     highlightAll(main);
   }
@@ -512,6 +526,7 @@
   $('scrim').addEventListener('click', closeDrawer);
   $('theme-toggle').addEventListener('click', cycleTheme);
   $('lang-pick').addEventListener('change', (event) => setLang(event.target.value));
+  $('side-cat')?.addEventListener('change', (event) => showCategory(event.target.value));
 
   let ticking = false;
   window.addEventListener('scroll', () => {

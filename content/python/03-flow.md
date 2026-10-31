@@ -4,7 +4,7 @@ part: 语言基础
 title: 控制流
 lede: 条件、循环和模式匹配。Python 只有 for-each 式的循环，习惯后比下标循环更省事。
 source: 更多控制流工具 | controlflow.html ; 深入条件控制 | datastructures.html
-seo_title: Python 控制流：if、for、range 和 match，对比 Java switch 与 Kotlin when
+seo_title: Python 控制流：if、for 和 match，对比 Java 与 Kotlin
 seo_description: 讲解 Python 的条件判断、for 循环、range、enumerate、zip、循环 else 和 match 模式匹配，并对比 Java switch 和 Kotlin when 的写法与区别。
 ---
 

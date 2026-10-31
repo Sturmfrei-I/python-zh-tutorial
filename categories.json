@@ -1,0 +1,44 @@
+{
+  "categories": [
+    {
+      "id": "python",
+      "name": "Python 语言",
+      "summary": "从基础语法到标准库和异步编程，每个知识点都和 Java、Kotlin 对比。",
+      "seo_title": "Python 基础教程：语法、函数、类和异步，对比 Java",
+      "seo_description": "从变量、控制流、函数、类到标准库、虚拟环境和异步编程，系统学习 Python 语言基础。每个知识点都和 Java、Kotlin 对比，适合有编程经验的开发者。",
+      "cheatsheet": true
+    },
+    {
+      "id": "backend",
+      "name": "Python 服务端",
+      "summary": "用 FastAPI 写接口，用 Postgres 存数据，再把服务测试和部署好。",
+      "seo_title": "Python 后端开发教程：FastAPI、Postgres 和 Docker",
+      "seo_description": "用 Python 开发后端服务和 AI 应用接口：HTTPX、Pydantic、FastAPI、SSE、SQLModel、Postgres、pytest 和 Docker 部署，并和 Spring Boot、Kotlin 的写法对比。",
+      "stacked": true
+    },
+    {
+      "id": "llm",
+      "name": "大模型基础",
+      "summary": "接口调用、token、function calling、结构化输出和 embedding。",
+      "seo_title": "大模型开发教程：API 调用、Function Calling 和向量",
+      "seo_description": "大模型开发入门教程：用 Python 调用大模型 API，掌握 token 与上下文窗口、采样参数、Function Calling、结构化输出、提示缓存和 Embedding，是 AI 应用开发的基础。",
+      "stacked": true
+    },
+    {
+      "id": "agent",
+      "name": "Agent 开发",
+      "summary": "工具循环、记忆、MCP、LangGraph 和 RAG，把大模型做成 Agent。",
+      "seo_title": "AI Agent 开发教程：智能体的工具调用、记忆和 MCP",
+      "seo_description": "AI Agent 开发教程：用 Python 开发智能体，掌握工具调用循环、ReAct、先规划后执行、记忆与上下文工程、MCP、Agent Skills、LangGraph 和 RAG。",
+      "stacked": true
+    },
+    {
+      "id": "evals",
+      "name": "评测与安全",
+      "summary": "用指标和回归场景衡量 Agent 的效果，防范 prompt injection。",
+      "seo_title": "AI Agent 评测与安全教程：评测指标和提示注入防护",
+      "seo_description": "AI Agent 开发必备的评测与安全知识：评测指标、LLM-as-judge、回归场景集和 Prompt Injection 防护，用 Python 实现。",
+      "stacked": true
+    }
+  ]
+}

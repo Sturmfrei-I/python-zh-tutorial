@@ -4,7 +4,7 @@ part: 工程实践
 title: 标准库巡礼
 lede: 不逐个讲 API，只告诉你某个需求该找哪个模块，再看几个最常用的例子。
 source: 标准库简介 | stdlib.html ; 标准库简介第二部分 | stdlib2.html
-seo_title: Python 标准库教程：常用模块速览，对比 Java 和 Kotlin
+seo_title: Python 标准库教程：常用模块速览，对比 Java、Kotlin
 seo_description: 按需求查 Python 标准库：pathlib、re、datetime、threading、asyncio、logging、decimal、unittest 等常用模块，并给出 Java、Kotlin 的对应写法。
 ---
 
@@ -403,7 +403,7 @@ CPython 3.12 有全局解释器锁（GIL），同一时刻只有一个线程执�
 
 ## 异步编程 {#async}
 
-`asyncio` 用单线程事件循环处理大量 I/O。`async def` 定义协程，`await` 等待结果并让出控制权。官方教程没有讲它，但现代 Python 的网络框架大多基于它。
+`asyncio` 用单线程事件循环处理大量 I/O。`async def` 定义协程，`await` 等待结果并让出控制权。官方教程没有讲它，但现代 Python 的网络框架大多基于它。这里只看最基本的用法，详细内容见「异步编程和异步生成器」一章。
 
 :::compare 并发执行多个任务
 ```python

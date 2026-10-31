@@ -4,7 +4,7 @@ part: 对象、异常与文件
 title: 类
 lede: 方法要显式写 self，字段不用声明，没有访问修饰符。dataclass 和生成器是最值得掌握的两个工具。
 source: 类 | classes.html
-seo_title: Python 类与面向对象：self、继承、dataclass、枚举和生成器，对比 Java
+seo_title: Python 面向对象：类、继承和 dataclass，对比 Java
 seo_description: 讲解 Python 类的 self、__init__、继承、@property、特殊方法、dataclass、枚举和生成器，并和 Java、Kotlin 的类、record、data class 逐项对比。
 ---
 

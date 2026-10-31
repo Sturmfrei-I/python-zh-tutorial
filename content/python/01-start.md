@@ -4,7 +4,7 @@ part: 语言基础
 title: 上手运行
 lede: 跑起第一段代码，弄清 Python 和 JVM 语言在运行方式上的差别。
 source: 课前甜点 | appetite.html ; 使用解释器 | interpreter.html ; 交互式编辑 | interactive.html ; 附录 | appendix.html
-seo_title: Python 入门教程：安装、运行第一个程序，和 Java、Kotlin 有什么不同
+seo_title: Python 入门教程：安装和第一个程序，对比 Java、Kotlin
 seo_description: Python 入门第一步：安装 Python 3.12，运行第一段代码，理解解释执行、动态类型和缩进语法。每个知识点都和 Java、Kotlin 对比，适合有编程经验的开发者快速上手。
 ---
 

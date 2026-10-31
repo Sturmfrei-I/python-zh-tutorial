@@ -4,7 +4,7 @@ part: 函数与数据
 title: 模块与包
 lede: 一个 .py 文件就是一个模块，一个目录就是一个包。import 会真的执行代码，这点和 Java 不同。
 source: 模块 | modules.html
-seo_title: Python 模块与包：import、__name__ 和相对导入，对比 Java package
+seo_title: Python 模块与包：import 和 __name__，对比 Java
 seo_description: 讲解 Python 的 import 机制、__name__ 的作用、模块搜索路径、包和相对导入，并对比 Java、Kotlin 的 package 和类路径。
 ---
 

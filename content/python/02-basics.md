@@ -4,7 +4,7 @@ part: 语言基础
 title: 变量与基础类型
 lede: 四种最常用的基础类型。重点看整除、切片和字符串格式化，这些地方最容易带着旧习惯写错。
 source: Python 速览 | introduction.html ; 浮点算术 | floatingpoint.html
-seo_title: Python 基础语法：变量、数字、字符串和列表，对比 Java 和 Kotlin
+seo_title: Python 基础语法：变量、字符串和列表，对比 Java
 seo_description: 讲解 Python 变量、整除与浮点数精度、字符串切片、f-string 和列表，并和 Java、Kotlin 逐项对比，帮你避开转 Python 时最容易犯的错误。
 ---
 

@@ -4,7 +4,7 @@ part: 函数与数据
 title: 数据结构
 lede: 列表、元组、集合和字典，再加上推导式。这一章的内容在日常代码里出现得最频繁。
 source: 数据结构 | datastructures.html
-seo_title: Python 数据结构：列表推导式、字典、元组和集合，对比 Java Stream
+seo_title: Python 数据结构：推导式、字典和集合，对比 Java
 seo_description: 讲解 Python 的 list、tuple、set、dict 和列表推导式，并对比 Java Stream 和 Kotlin 集合操作，帮你把 ArrayList、HashMap 的经验用到 Python 上。
 ---
 

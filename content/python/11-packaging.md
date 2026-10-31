@@ -4,7 +4,7 @@ part: 工程实践
 title: 虚拟环境与依赖
 lede: 每个项目都要有自己的虚拟环境。venv 加 pip 相当于一个极简的 Maven。最后再看看学完之后往哪走。
 source: 虚拟环境和包 | venv.html ; 接下来 | whatnow.html
-seo_title: Python 虚拟环境与 pip：venv、依赖管理，对比 Maven 和 Gradle
+seo_title: Python 虚拟环境与 pip：对比 Maven 和 Gradle
 seo_description: 讲解 Python 虚拟环境 venv、pip、requirements.txt、pyproject.toml 和 uv，并和 Maven、Gradle 对比，最后给出 Python 常用框架和学习方向。
 ---
 
